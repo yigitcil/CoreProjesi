@@ -1,3 +1,8 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.Extensions.DependencyInjection;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -13,6 +18,36 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+ void ConfigureServices(IServiceCollection services)
+{
+    services.AddControllersWithViews();
+
+    services.AddSession();
+
+    services.AddMvc(config=>
+    {
+        var policy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+        config.Filters.Add(new AuthorizeFilter(policy));
+
+    });
+    services.AddMvc();
+    services.AddAuthentication(
+        CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie(x=>
+        {
+            x.LoginPath = "/Login/Index/";
+        }
+        );
+}
+void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
+{
+	app.UseSession();
+	app.UseMvcWithDefaultRoute();
+}
+//app.UseSession();
+
 app.UseStatusCodePagesWithReExecute("/ErrorPage/Error1","?code={0}");
 
 app.UseHttpsRedirection();
@@ -24,6 +59,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Blog}/{action=Index}/{id?}");
 
 app.Run();
